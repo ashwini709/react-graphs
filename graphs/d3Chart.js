@@ -1,4 +1,5 @@
 // reference: https://bost.ocks.org/mike/bar/3/
+// http://codepen.io/ajskelton/pen/Lkniv
 
 var d3 = require("d3");
 
@@ -15,13 +16,13 @@ d3Chart.create = function(el, props, state) {
 
   //Create the Scale we will use for the Axis
   var xAxisScale = d3.scaleLinear()
-                          .domain([0, 100])
-                          .range([0, 400]);
+                          .domain(state.domain.x)
+                          .range([0, props.width]);
 
   //Create the Scale we will use for the Axis
   var yAxisScale = d3.scaleLinear()
-                          .domain([100, 0])
-                          .range([0, 300]);
+                          .domain(state.domain.y)
+                          .range([0, props.height]);
 
   //Create the Axis
   var xAxis = d3.axisBottom(xAxisScale);
@@ -65,7 +66,7 @@ d3Chart._scales = function(el, domain) {
     .domain(domain.x);
 
   var y = d3.scaleLinear()
-    .range([height, 0])
+    .range([0, height])
     .domain(domain.y);
 
   return {x: x, y: y};
@@ -75,21 +76,53 @@ d3Chart._scales = function(el, domain) {
 d3Chart._drawPoints = function(el, scales, data, props) {
   var g = d3.select(el).selectAll('.d3-points');
 
-  var point = g.selectAll('.d3-point')
-    .data(data, function(d) { return d.id; });
+  var barWidth = (props.width/data.length);
 
-  // ENTER
-  point.enter().append('rect')
-      .attr('class', 'd3-point')
-      .merge(point)
-      .attr("x", function(d) { return scales.x(d.x); })
-      .attr("y", function(d) { return scales.y(d.y); })
-      .attr('width', function(d) { return 42; })
-      .attr('height', function(d) { return (props.height - scales.y(d.y)); })
+  var bars = g.selectAll('.d3-bar')
+    .data(data, function(d) { return d.id; })
+    .enter()
+    .append('rect')
+    .attr('class', 'd3-bar')
+    .attr("x", function (d, i) { return barWidth*i; })
+    .attr('width', function(d) { return (barWidth - 1); })
+    .attr("y", function(d) { return props.height; })
+    .attr('height', function(d) { return 0; })
+
+
+  bars.transition()
+    .duration(1000)
+    .delay(100)
+    .attr("y", function(d) { return scales.y(d.y); })
+    .attr('height', function(d) { return (props.height - scales.y(d.y)); })
 
   // EXIT
-  point.exit()
+  bars.exit()
       .remove();
 };
+
+
+// Sequential animation
+//   var point = g.selectAll('.d3-point')
+//     .data(data, function(d) { return d.id; });
+
+//   var barWidth = (props.width/data.length);
+
+//   // ENTER
+//   point.enter().append('rect')
+//       .attr('class', 'd3-point')
+//       .merge(point)
+//       .attr("x", function (d, i) { return barWidth*i; })
+//       .attr('width', function(d) { return (barWidth - 1); })
+//       .attr("y", function(d) { return props.height; })
+//       .attr('height', function(d) { return 0; })
+//       .transition()
+//       .delay(function (d, i) { return i*100; })
+//       .attr("y", function(d) { return scales.y(d.y); })
+//       .attr('height', function(d) { return (props.height - scales.y(d.y)); })
+
+//   // EXIT
+//   point.exit()
+//       .remove();
+// };
 
 export default d3Chart;
