@@ -3,7 +3,7 @@
 
 var d3 = require("d3");
 
-require('../styles/d3Chart.less');
+require('../styles/bar-line-chart.less');
 
 var d3Chart = {};
 
@@ -14,7 +14,7 @@ d3Chart.create = function(el, props, state) {
       .attr('height', props.height);
 
   //Create the Scale we will use for the Axis
-  var xAxisScale = d3.scaleUtc()
+  var xAxisScale = d3.scaleTime()
                       .domain(state.domain.x)
                       .range([0, props.width]);
 
@@ -27,10 +27,12 @@ d3Chart.create = function(el, props, state) {
                       .domain([10, 0])
                       .range([0, props.height]);
 
+
   //Create the Axis
   var xAxis = d3.axisBottom(xAxisScale).tickFormat(d3.timeFormat("%Y"));
+
   var yAxis = d3.axisLeft(yAxisScale);
-  var y1Axis = d3.axisRight(y1AxisScale);
+  var y1Axis = d3.axisRight(y1AxisScale).tickSize(0-props.width);
 
   svg.append("g")
       .attr('class', 'y1-axis')
@@ -67,12 +69,12 @@ d3Chart.create = function(el, props, state) {
 
 d3Chart.update = function(el, props, state) {
   // Re-compute the scales, and render the data points
-  var scales = this._scales(el, state.domain);
+  var scales = this._scales(props, state.domain);
   this._drawPoints(el, scales, state.data, props);
 
   var linedata = [{ values: state.lineData.map(function(d) { return { date: d.x, value: parseFloat(d.y,10) }; }) }];
 
-  var lineScales = this._lineScales(el, linedata);
+  var lineScales = this._lineScales(el, props);
 
   var line = d3.line()
       .x(function(d) { return lineScales.x(d.date); })
@@ -95,7 +97,7 @@ d3Chart._drawLine = function(el, line, lineData) {
                         .attr("class", "d3-line")
                         .attr("d", function(d) { return line(d.values[0]); })
                         .transition()
-                        .duration(2000)
+                        .duration(1000)
                         .attrTween('d',function (d) {
                           var interpolate = d3.scaleQuantile()
                                                     .domain([0,1])
@@ -106,41 +108,32 @@ d3Chart._drawLine = function(el, line, lineData) {
                         });
 };
 
-d3Chart._lineScales = function(el, linedata) {
-  var width = el.offsetWidth;
-  var height = el.offsetHeight;
+d3Chart._lineScales = function(el, props) {
+  var width = props.width;
+  var height = props.height;
 
-  var x = d3.scaleUtc()
-    .domain([
-      d3.min(linedata, function(c) { return d3.min(c.values, function(v) { return v.date; }); }),
-      d3.max(linedata, function(c) { return d3.max(c.values, function(v) { return v.date; }); })
-    ])
+  var x = d3.scaleLinear()
+    .domain([2010, 2020])
     .range([0, width]);
 
   var y = d3.scaleLinear()
-    .domain([
-      d3.min(linedata, function(c) { return d3.min(c.values, function(v) { return v.value; }); }),
-      d3.max(linedata, function(c) { return d3.max(c.values, function(v) { return v.value; }); })
-    ])
+    .domain([0, 10])
     .range([height, 0]);
 
   return {x: x, y: y};
 };
 
-d3Chart._scales = function(el, domain) {
+d3Chart._scales = function(props, domain) {
   if (!domain) {
     return null;
   }
 
-  var width = el.offsetWidth;
-  var height = el.offsetHeight;
-
-  var x = d3.scaleUtc()
-    .range([0, width])
-    .domain(domain.x);
+  var x = d3.scaleLinear()
+    .range([0, props.width])
+    .domain([2010, 2020]);
 
   var y = d3.scaleLinear()
-    .range([0, height])
+    .range([0, props.height])
     .domain(domain.y);
 
   return {x: x, y: y};
@@ -173,30 +166,5 @@ d3Chart._drawPoints = function(el, scales, data, props) {
   bars.exit()
       .remove();
 };
-
-
-// Sequential animation
-//   var point = g.selectAll('.d3-point')
-//     .data(data, function(d) { return d.id; });
-
-//   var barWidth = (props.width/data.length);
-
-//   // ENTER
-//   point.enter().append('rect')
-//       .attr('class', 'd3-point')
-//       .merge(point)
-//       .attr("x", function (d, i) { return barWidth*i; })
-//       .attr('width', function(d) { return (barWidth - 1); })
-//       .attr("y", function(d) { return props.height; })
-//       .attr('height', function(d) { return 0; })
-//       .transition()
-//       .delay(function (d, i) { return i*100; })
-//       .attr("y", function(d) { return scales.y(d.y); })
-//       .attr('height', function(d) { return (props.height - scales.y(d.y)); })
-
-//   // EXIT
-//   point.exit()
-//       .remove();
-// };
 
 export default d3Chart;
