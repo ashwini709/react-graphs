@@ -13,9 +13,8 @@ d3Chart.create = function(el, props, state) {
       .attr('width', props.width)
       .attr('height', props.height);
 
-
   //Create the Scale we will use for the Axis
-  var xAxisScale = d3.scaleLinear()
+  var xAxisScale = d3.scaleUtc()
                           .domain(state.domain.x)
                           .range([0, props.width]);
 
@@ -25,7 +24,7 @@ d3Chart.create = function(el, props, state) {
                           .range([0, props.height]);
 
   //Create the Axis
-  var xAxis = d3.axisBottom(xAxisScale);
+  var xAxis = d3.axisBottom(xAxisScale).tickFormat(d3.timeFormat("%Y"));
   var yAxis = d3.axisLeft(yAxisScale);
 
   svg.append("g")
